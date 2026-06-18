@@ -420,15 +420,15 @@ Cada módulo segue o padrão em camadas:
 
 | Documento | Caminho |
 |---|---|
-| Visão Geral do Sistema | [visao_geral_sistema.md](file:///home/erick/projetos/dropshippingV2/docs/visao_geral_sistema.md) |
-| Arquitetura Modelo País | [architecture_country_model.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_3/architecture_country_model.md) |
-| Consolidação Arquitetural | [architerute_consolidation.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_3/architeture_reorganization.md) |
-| Event-Driven Architecture | [event_driven_architecture.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_2/event_driven_architecture.md) |
-| Workflow Studio | [workflow_studio.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_2/workflow_studio.md) |
-| Chatbot Avançado | [plano_implementacao_chatbot_avancado.md](file:///home/erick/projetos/dropshippingV2/docs/features/plano_implementacao_chatbot_avancado.md) |
-| Bot Council | [bot_council_architecture.md](file:///home/erick/projetos/dropshippingV2/docs/features/bot_council_architecture.md) |
-| Security Layer | [security_layer.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_1/security_layer.md) |
-| Tasks Detalhadas | [TASKS.md](file:///home/erick/projetos/dropshippingV2/docs/TASKS.md) |
+| Visão Geral do Sistema | [visao_geral_sistema.md] |
+| Arquitetura Modelo País | [architecture_country_model.md] |
+| Consolidação Arquitetural | [architerute_consolidation.md] |
+| Event-Driven Architecture | [event_driven_architecture.md] |
+| Workflow Studio | [workflow_studio.md] |
+| Chatbot Avançado | [plano_implementacao_chatbot_avancado.md] |
+| Bot Council | [bot_council_architecture.md] |
+| Security Layer | [security_layer.md] |
+| Tasks Detalhadas | [TASKS.md] |
 
 ---
 
