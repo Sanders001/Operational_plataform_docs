@@ -1,0 +1,446 @@
+este é o Road-map do sistema# 🗺️ Roadmap Geral — CRM Dropshipping V2
+
+> **Última atualização:** 2026-06-07  
+> **Progresso geral estimado:** ~90%  
+> **Arquitetura:** Modelo País (Domain-Driven Design com analogia Nação)
+
+---
+
+## 1. Visão Macro da Arquitetura
+
+O sistema é um **CRM/ERP unificado para operações de dropshipping**, construído com FastAPI + SQLAlchemy async + PostgreSQL. A arquitetura segue o **"Modelo País"** — uma analogia onde a plataforma é um país, os domínios são estados, e os módulos são cidades.
+
+```mermaid
+graph TB
+    subgraph "🏛️ Governo Federal (core/)"
+        CONST["📜 Constituição<br/>5 Regras Pétreas"]
+        DIPLO["🤝 Diplomata<br/>Controller Interdomínio"]
+        RULE_ENG["⚙️ Motor de Regras<br/>DSL + Ações Builtin"]
+        COG["🧠 Cognitive Engine<br/>NLP · LLM · STT"]
+        MW["🛡️ Middlewares<br/>Correlation · Rate Limit<br/>Customs · Tenant · Security"]
+    end
+
+    subgraph "🏢 Estado ERP (9 módulos)"
+        EST["📦 Estoque"]
+        PROD["🏷️ Produtos"]
+        VEND["💰 Vendas"]
+        PED["📋 Pedidos"]
+        PAG["💳 Pagamentos"]
+        FORN["🏭 Fornecedores"]
+        CLI["👤 Clientes"]
+        REL["📊 Relatórios"]
+        LOG["🚚 Logística"]
+    end
+
+    subgraph "📣 Estado CRM (5 módulos)"
+        LEADS["🎯 Leads"]
+        CAMP["📢 Campanhas"]
+        COM["💬 Comunicação"]
+        CHAT["🤖 Chatbot M2M"]
+        DESK["🎧 Desk / Handoff"]
+    end
+
+    subgraph "🔧 Estado Platform (8 módulos)"
+        AUTH["🔐 Auth / RBAC"]
+        RULES["📏 Rules DSL"]
+        EVENTS["📡 Events / EDA"]
+        ACTIONS["⚡ Actions"]
+        INTEG["🔗 Integrations"]
+        WPP["📱 WhatsApp"]
+        COGMOD["🧠 Cognitive"]
+        PRIV["🔒 Privacy"]
+    end
+
+    subgraph "🌐 Embaixadas (Integrações Externas)"
+        INTER["🏦 Banco Inter<br/>PIX"]
+        CORR["📮 Correios<br/>Rastreio & Frete"]
+        META["📸 Meta<br/>WhatsApp Cloud API<br/>Lead Ads"]
+        SMTP_INT["📧 SMTP<br/>Email"]
+        BAILEYS["📲 Baileys<br/>WhatsApp Bridge"]
+    end
+
+    subgraph "🖥️ Frontend"
+        APP_FE["📱 Painel Usuário<br/>/app"]
+        DEV_FE["🛠️ Painel Dev<br/>/dev"]
+        STUDIO_FE["🎨 Chatbot Studio<br/>React Flow"]
+    end
+
+    CONST --> DIPLO
+    DIPLO --> RULE_ENG
+    COG --> CHAT
+
+    VEND --> PAG
+    LEADS --> CLI
+    CHAT --> DESK
+    PAG --> INTER
+    LOG --> CORR
+    COM --> META
+    COM --> SMTP_INT
+    WPP --> BAILEYS
+```
+
+---
+
+## 2. Stack Tecnológica
+
+| Camada | Tecnologia |
+|---|---|
+| **Backend** | FastAPI + SQLAlchemy (async) + Pydantic |
+| **Banco de Dados** | PostgreSQL 16 |
+| **Cache / Broker** | Redis 7 |
+| **Filas** | Celery (5 filas especializadas) |
+| **Auth** | JWT (python-jose) + bcrypt |
+| **NLP / IA** | FAISS + Sentence Transformers + Google Gemini + OpenAI |
+| **WhatsApp Bridge** | Node.js 20 + Wpp_connect (WebSocket) |
+| **Frontend Studio** | React + React Flow |
+| **Infra** | Docker + Docker Compose |
+| **CI/CD** | GitHub Actions (Lint → Test → Build → GHCR) |
+| **Monitoramento** | Flower (Celery) + pgweb (DB) |
+
+---
+
+## 3. Mapa de Domínios e Módulos
+
+### 🏢 Domínio ERP — Operações de Negócio
+
+| Módulo | Responsabilidade | Status |
+|---|---|---|
+| [estoque] | Controle de estoque, entrada/saída | ✅ Completo |
+| [produtos] | Catálogo de produtos | ✅ Completo |
+| [vendas] | Processamento de vendas, funil | ✅ Completo |
+| [pedidos] | Controle de pedidos (ERP legado) | ✅ Completo |
+| [pagamentos] | PIX via Banco Inter | ✅ Completo |
+| [fornecedores] | Gestão de fornecedores | ✅ Completo |
+
+| [clientes] | Cadastro e gestão de clientes | ✅ Completo |
+| [relatorios]| Relatórios e KPIs | ✅ Completo |
+| [logistica] | Rastreio e despacho (Correios) | ✅ Completo |
+
+### 📣 Domínio CRM — Relacionamento e Comunicação
+
+| Módulo | Responsabilidade | Status |
+|---|---|---|
+| [leads]| Gestão de leads, funil, Meta Lead Ads | ✅ Completo |
+| [campanhas] | Tráfego pago, ROI, métricas | ✅ Completo |
+| [comunicacao] | WhatsApp + Email multi-canal | ✅ Completo |
+| [chatbot]| Chatbot M2M (Pipeline + FAISS + LLM) | ✅ Completo |
+| [desk] | Handoff humano (ACD) | ✅ Completo |
+
+### 🔧 Domínio Platform — Infraestrutura e Governança
+
+| Módulo | Responsabilidade | Status |
+|---|---|---|
+| [auth] | JWT, RBAC, password reset | ✅ Completo |
+| [rules] | Motor de regras DSL (3 níveis) | ✅ Completo |
+| [events] | Governança, contratos, EDA | ✅ Completo |
+| [actions] | Ações registráveis (builtin + custom) | ✅ Completo |
+| [integrations] | Gestão de integrações externas | ✅ Completo |
+| [whatsapp] | Webhook WhatsApp | ✅ Completo |
+| [cognitive] | Módulo cognitivo (NLP/LLM) | ✅ Completo |
+| [privacy] | Camada de privacidade | ✅ Completo |
+
+---
+
+## 4. Fluxo Principal de Dados
+
+```mermaid
+sequenceDiagram
+    participant Lead as 📱 Lead (WhatsApp)
+    participant WPP_connect as 📲 wpp Bridge
+    participant API as ⚡ FastAPI
+    participant Chatbot as 🤖 Chatbot M2M
+    participant Celery as 📨 Celery Workers
+    participant DB as 🗄️ PostgreSQL
+    participant Inter as 🏦 Banco Inter
+    participant Correios as 📮 Correios
+
+    Lead->>Baileys: Envia mensagem WhatsApp
+    WPP_connect->>API: POST /leads/{id}/chat (inbound)
+    API->>Celery: chatbot.process_batch
+    Celery->>Chatbot: Pipeline (FAISS → LLM → Strategy)
+    Chatbot->>DB: Salva sessão + contexto
+    Chatbot->>Baileys: Resposta via HTTP /send
+
+    Note over Chatbot: Checkout Conversacional
+    Chatbot->>API: Coleta dados (nome, CEP, endereço)
+    API->>Inter: Gera PIX (POST /pix)
+    Inter-->>API: QR Code + copia-e-cola
+    API->>Baileys: Envia PIX ao lead
+
+    Note over Inter: Webhook de Confirmação
+    Inter->>API: Webhook pagamento confirmado
+    API->>Celery: events.process (PagamentoConfirmado)
+    Celery->>DB: Atualiza venda + estoque
+    Celery->>Correios: Solicita despacho
+    Correios-->>DB: Código de rastreio
+    Celery->>Baileys: Notifica lead com rastreio
+```
+
+---
+
+## 5. Camada Cognitiva (Cognitive Engine)
+
+```mermaid
+graph LR
+    subgraph "🧠 Cognitive Engine"
+        direction TB
+        NLP["🔍 NLP<br/>IntentMatcher (FAISS)"]
+        LLM["💡 LLM Providers<br/>Gemini · OpenAI"]
+        STT["🎙️ STT<br/>Speech-to-Text"]
+        MEM["💾 Memory<br/>Conversation State"]
+        REV["✅ Review<br/>Response Validation"]
+    end
+
+    MSG["📩 Mensagem<br/>do Lead"] --> NLP
+    NLP -->|"Intent classificado"| PIPE["Pipeline"]
+    NLP -->|"Confiança baixa"| LLM
+    LLM --> PIPE
+    STT -->|"Áudio → Texto"| NLP
+    MEM <--> PIPE
+    PIPE --> REV
+    REV --> RESP["📤 Resposta"]
+```
+
+| Componente | Descrição |
+|---|---|
+| [IntentMatcher] | Classificação de intenções via FAISS + Sentence Transformers |
+| LLM Fallback | Gemini (primário) + OpenAI (fallback) com retry/backoff |
+| Response Reuse | Cache Redis por hash para bypass do FAISS em textos idênticos |
+| Studio Seeds | IntentSeed + LearnedIntent carregados dinamicamente do banco |
+
+---
+
+## 6. Governança e Segurança
+
+### Modelo País — Hierarquia de Poder
+
+```mermaid
+graph TB
+    CONST["📜 Constituição<br/>5 Regras Pétreas<br/>(constitution.py)"]
+    TRIBUNAL["⚖️ Tribunal Constitucional<br/>Rule Engine com<br/>precedência de nível"]
+    DIPLO["🤝 Diplomata Executivo<br/>DiplomatController<br/>(controller.py)"]
+    REG["📋 Registro Nacional<br/>de Exceções"]
+
+    CONST --> TRIBUNAL
+    TRIBUNAL --> DIPLO
+    DIPLO --> REG
+
+    subgraph "Regras Pétreas"
+        ART1["ART 1: Nunca vender<br/>sem autenticação"]
+        ART2["ART 2: Nunca agir<br/>sem permissão"]
+        ART3["ART 3: Nunca pular<br/>autenticação"]
+        ART4["ART 4: Nunca violar<br/>políticas financeiras"]
+        ART5["ART 5: Nunca agir<br/>fora do escopo"]
+    end
+```
+
+### Middlewares de Proteção
+
+| Middleware | Arquivo | Função |
+|---|---|---|
+| **Correlation** | [correlation.py] | X-Correlation-Id em toda requisição |
+| **Rate Limiter** | [rate_limiter.py] | Limite de requisições por IP/usuário |
+| **Customs (Alfândega)** | [customs.py]| Sanitização, validação de tamanho, auditoria |
+| **Tenant** | [tenant.py] | Isolamento multi-tenant |
+| **Security Headers** | [security_headers.py] | Headers de segurança HTTP |
+| **Governance** | [governance/] | Idempotência via hash |
+| **Events** | [events/] | Event handler decorator, rate limit por rota |
+
+---
+
+## 7. Integrações Externas (Embaixadas)
+
+```mermaid
+graph LR
+    subgraph "ACL — Anti-Corruption Layer"
+        direction TB
+        REG["🗂️ ProviderRegistry<br/>(Auto-Discovery)"]
+        IF["📋 Interfaces<br/>(Contratos)"]
+    end
+
+    subgraph "🏦 Pagamentos"
+        INTER_A["Banco Inter<br/>adapter.py"]
+        INTER_R["resolver.py"]
+    end
+
+    subgraph "📮 Logística"
+        CORR_A["Correios<br/>adapter.py"]
+        CORR_R["resolver.py"]
+    end
+
+    subgraph "💬 Comunicação"
+        WPP_META["WhatsApp<br/>Meta Cloud API"]
+        WPP_C["WhatsApp<br/>WPP_connect (Node.js)"]
+        EMAIL_S["Email<br/>SMTP"]
+    end
+
+    REG --> INTER_A
+    REG --> CORR_A
+    REG --> WPP_META
+    REG --> WPP_BAIL
+    REG --> EMAIL_S
+    IF --> REG
+```
+
+---
+
+## 8. Infraestrutura Docker
+
+```mermaid
+graph TB
+    subgraph "Docker Compose"
+        API["🚀 api<br/>FastAPI :8000"]
+        DB["🗄️ db<br/>PostgreSQL :5432"]
+        REDIS["⚡ redis<br/>Redis :6379"]
+        WORKER["⚙️ worker<br/>Celery (standard)"]
+        WORKER_H["🧠 worker_heavy<br/>Celery (IA, 2GB)"]
+        WPP_C["📲 whatsapp<br/>Node.js :3040"]
+        FLOWER["🌸 flower<br/>Monitoring :5555"]
+        PGWEB["🔍 pgweb<br/>DB Admin :8081"]
+    end
+
+    API --> DB
+    API --> REDIS
+    API --> WPP_C
+    WORKER --> DB
+    WORKER --> REDIS
+    WORKER_H --> DB
+    WORKER_H --> REDIS
+    FLOWER --> REDIS
+    PGWEB --> DB
+```
+
+### Filas Celery
+
+| Fila | Worker | Função |
+|---|---|---|
+| `celery` (default) | standard | Eventos, integrações, processamento geral |
+| `rules-queue` | standard | Execução isolada de regras DSL |
+| `queue_chat_fast` | standard | Processamento de texto (chatbot) |
+| `queue_chat_heavy` | worker_heavy | Processamento de mídia (áudio, imagens, documentos) |
+
+---
+
+## 9. Progresso por Prioridade
+
+```mermaid
+gantt
+    title Progresso do Projeto
+    dateFormat YYYY-MM
+    axisFormat %b %Y
+
+    section Fundação
+    P1 Segurança              :done, p1, 2026-01, 2026-02
+    P2 Confiabilidade         :done, p2, 2026-02, 2026-02
+    P3 Operacionalização      :done, p3, 2026-02, 2026-03
+
+    section Features Core
+    P4 Melhorias              :done, p4, 2026-03, 2026-03
+    P5 Chatbot Observability  :done, p5, 2026-03, 2026-04
+    P6 Escalabilidade M2M     :active, p6, 2026-04, 2026-06
+
+    section Qualidade
+    P7 Bug Fixes              :done, p7, 2026-04, 2026-04
+    P8 Partes Faltantes       :done, p8, 2026-04, 2026-05
+
+    section Features Avançadas
+    P9 Features Chave         :done, p9, 2026-04, 2026-05
+
+    section Arquitetura
+    P10 Refactor Modelo País  :done, p10, 2026-05, 2026-05
+    P11 EDA & Workflow Studio :active, p11, 2026-05, 2026-07
+```
+
+| # | Prioridade | Status | % |
+|---|---|---|---|
+| P1 | Segurança | ✅ Concluída | 100% |
+| P2 | Confiabilidade | ✅ Concluída | 100% |
+| P3 | Operacionalização | ✅ Concluída | 100% |
+| P4 | Melhorias Futuras | ✅ Concluída | 100% |
+| P5 | Chatbot Observabilidade & Bridge | ✅ Concluída | 100% |
+| P6 | Escalabilidade M2M | 🔄 Em andamento | ~60% |
+| P7 | Bug Fixes | ✅ Concluída | 100% |
+| P8 | Partes Faltantes | ✅ Concluída | 100% |
+| P9 | Features Chave | ✅ Concluída | 100% |
+| P10 | Refactor Modelo País | ✅ Concluída | 100% |
+| P11 | EDA & Workflow Studio | 🔄 Em andamento | ~80% |
+
+---
+
+## 10. O que falta — Itens Pendentes
+
+### 🔴 Prioridade Alta
+
+| Item | Origem | Detalhe |
+|---|---|---|
+| Alembic Migrations do Workflow Studio | P11 Fase 4 | `PlatformWorkflow`, `PlatformNode`, `PlatformEdge` precisam ser formalizados |
+| UI React Flow do Workflow Studio | P11 Fase 4 | Componentes visuais para nós (Trigger, Listener, Barrier, Emit) |
+| Visualizador Macro de Coreografias | P11 Fase 4 | Mapa de dança inter-domínio no canvas |
+
+### 🟡 Prioridade Média
+
+| Item | Origem | Detalhe |
+|---|---|---|
+| Otimizar índices FAISS | P6 | Otimizar tamanho e armazenamento em memória para escala |
+| Auto-Scaling Celery Workers | P6 | Baseado no volume das filas `queue_chat_fast` e `queue_chat_heavy` |
+| Migração Workers para gevent/eventlet | P6 | Melhor concorrência I/O no pipeline M2M |
+| Bridge Externa HTTP | P7.7 | Diretório `chatbot/bridge/external/` vazio |
+| Templates STATIC/DYNAMIC no Studio | P8.2 | Criar via painel do Chatbot Studio |
+| Migração seeds JSON → banco | P8.2 | Migrar `intents.json` para o Studio |
+
+### 🟢 Oportunidades Futuras
+
+| Área | Descrição |
+|---|---|
+| **Multi-Tenant SaaS** | Isolamento completo por `empresa_id` — modelo `Bot` já suporta |
+| **Bot Council** | Arquitetura documentada em [bot_council_architecture.md] — decisão colaborativa entre bots |
+| **Frontend SPA Completo** | Expandir painéis `/app` e `/dev` com dashboards ricos |
+| **Webhooks de Saída** | Permitir clientes configurarem webhooks para eventos do sistema |
+| **API Pública v2** | Versionar API para consumo externo com rate limiting por plano |
+| **Observabilidade (OpenTelemetry)** | Tracing distribuído nos workers e API |
+
+---
+
+## 11. Estrutura de Cada Módulo
+
+Cada módulo segue o padrão em camadas:
+
+```
+<módulo>/
+├── models.py       # SQLAlchemy ORM models
+├── schemas.py      # Pydantic schemas (request/response)
+├── repository.py   # Queries ao banco de dados
+├── service.py      # Regras de negócio
+└── routes.py       # Rotas FastAPI
+```
+
+---
+
+## 12. Documentação Existente
+
+| Documento | Caminho |
+|---|---|
+| Visão Geral do Sistema | [visao_geral_sistema.md](file:///home/erick/projetos/dropshippingV2/docs/visao_geral_sistema.md) |
+| Arquitetura Modelo País | [architecture_country_model.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_3/architecture_country_model.md) |
+| Consolidação Arquitetural | [architerute_consolidation.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_3/architeture_reorganization.md) |
+| Event-Driven Architecture | [event_driven_architecture.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_2/event_driven_architecture.md) |
+| Workflow Studio | [workflow_studio.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_2/workflow_studio.md) |
+| Chatbot Avançado | [plano_implementacao_chatbot_avancado.md](file:///home/erick/projetos/dropshippingV2/docs/features/plano_implementacao_chatbot_avancado.md) |
+| Bot Council | [bot_council_architecture.md](file:///home/erick/projetos/dropshippingV2/docs/features/bot_council_architecture.md) |
+| Security Layer | [security_layer.md](file:///home/erick/projetos/dropshippingV2/docs/features/lv_1/security_layer.md) |
+| Tasks Detalhadas | [TASKS.md](file:///home/erick/projetos/dropshippingV2/docs/TASKS.md) |
+
+---
+
+## 13. Arquivos-Chave do Sistema
+
+| Arquivo | Papel |
+|---|---|
+| [main.py]| Entrypoint FastAPI, lifespan, middlewares |
+| [api.py] | Router central (3 domínios + 2 embaixadas) |
+| [constitution.py]| 5 regras pétreas invioláveis |
+| [controller.py] | DiplomatController — mediador interdomínio |
+| [config.py] | Configurações centrais (pydantic-settings) |
+| [database.py] | SQLAlchemy async engine + session |
+| [celery_app.py] | Configuração Celery + 5 filas |
+| [docker-compose.yml] | 7 serviços Docker |
