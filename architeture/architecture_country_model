@@ -1,0 +1,440 @@
+# Modelo Arquitetural do País — Documentação Formal
+
+> Documento de referência arquitetural da plataforma.
+> Baseado na analogia País ↔ Plataforma definida em `architeture_reorganization.md`.
+> Objetivo: servir como guia arquitetural e linguagem comum do projeto.
+
+---
+
+## 1. Glossário Arquitetural — Tabela de Equivalência
+
+| # | Analogia (País) | Componente Arquitetural | Descrição |
+|---|-----------------|------------------------|-----------|
+| 1 | País | **Plataforma** | Entidade raiz. Fornece infraestrutura, governança e serviços para todos os domínios. |
+| 2 | Constituição | **Regras Pétreas** | Invariantes absolutas que nenhum domínio, módulo ou agente pode violar. |
+| 3 | Dono do País | **Platform Owner** | Autoridade máxima. Define visão, princípios, limites e políticas. Não opera. |
+| 4 | Estados | **Domínios** (ERP, CRM, Chatbot Studio) | Unidades autônomas com regras, recursos e responsabilidades próprias. |
+| 5 | Cidades | **Módulos** | Subdivisões dos domínios. Cada módulo resolve um problema específico. |
+| 6 | Bairros | **Funcionalidades** | Capacidades internas de cada módulo (ex: Score, Funil dentro de Leads). |
+| 7 | Leis Locais | **Rules** (Rule Engine) | Regras de negócio em 3 níveis: módulo → domínio → plataforma. |
+| 8 | Ônibus | **Workflows Intradomínio** | Fluxos síncronos e previsíveis dentro de um mesmo domínio. |
+| 9 | Metrô | **Eventos Interdomínio** | Comunicação assíncrona entre domínios. Publica fatos, não ordens. |
+| 10 | Diplomata Executivo | **Controller** | Mediador de conflitos e ambiguidades entre domínios. |
+| 11 | Serviços Públicos | **Infraestrutura** | Recursos compartilhados: DB, Cache, Auth, Monitoramento. |
+| 12 | Agentes Públicos | **Personas Conversáveis** | Representantes cognitivos dos domínios (Agente Financeiro, Agente CRM, etc). |
+| 13 | Habitantes | **Usuários / Bots / Workers** | Entidades que operam dentro do sistema. |
+| 14 | Polícia / Órgãos Executores | **Action Engine** | Executa ações determinadas por regras. Não decide; cumpre. |
+| 15 | Inteligência Nacional | **Cognitive Engine** | Capacidade de entender, interpretar e contextualizar (NLP, LLM, Vision). |
+| 16 | Embaixadas | **Integrações Externas (ACL)** | Conexões com sistemas terceiros via Camada Anti-Corrupção (WhatsApp, Inter, Correios). |
+| 17 | Jornal Oficial | **Auditoria / Event Store** | Registro imutável de tudo que aconteceu, quem fez e por quê. |
+
+---
+
+## 2. Mapa Territorial — Estrutura Hierárquica
+
+```
+PAÍS (Plataforma)
+│
+├── CONSTITUIÇÃO (Regras Pétreas)
+│
+├── SERVIÇOS PÚBLICOS (Infraestrutura)
+│   ├── Banco de Dados (PostgreSQL)
+│   ├── Cache (Redis)
+│   ├── Autenticação (JWT / OTP / MFA / RBAC)
+│   ├── Configuração de Ambientes (ENV / Secrets)
+│   ├── Monitoramento
+│   └── Notificações
+│
+├── TRANSPORTE NACIONAL
+│   ├── Ônibus (Workflows intradomínio — Rule Engine)
+│   ├── Metrô (Eventos interdomínio — Event Bus)
+│   └── Workers (Celery — força de trabalho assíncrona)
+│
+├── GOVERNO FEDERAL
+│   ├── Diplomata Executivo (Controller)
+│   ├── Inteligência Nacional (Cognitive Engine)
+│   ├── Polícia / Executores (Action Engine)
+│   ├── Tribunal Constitucional (ver §3.1)
+│   ├── Jornal Oficial (Auditoria / Event Store)
+│   └── Registro Nacional de Exceções (ver §3.4)
+│
+├── EMBAIXADAS (Integrações — ACL)
+│   ├── Core: ProviderRegistry + Resolvers + Interfaces (Ports)
+│   ├── Comunicação: WhatsApp (WPPConnect, Meta), Email (SMTP)
+│   ├── Pagamentos: Inter (PIX mTLS)
+│   └── Logística: Correios (CWS)
+│
+├── ESTADO: ERP
+│   ├── Financeiro (Contas a pagar/receber, AdapterBanco)
+│   ├── Estoque (Produtos, Movimentações, Auditoria)
+│   ├── Vendas (Pedidos, Faturas, Clientes)
+│   ├── Logística (Rastreio, Rotas, Devoluções)
+│   └── Relacionamentos (Fornecedores, Clientes, Transportadores)
+│
+├── ESTADO: CRM
+│   ├── Leads (Contatos, Funil, Score)
+│   ├── Campanhas
+│   ├── Atendimento (Handoff)
+│   └── Chatbot (Bots, Regras)
+│
+└── ESTADO: CHATBOT STUDIO (Container)
+    ├── Domain Understanding (Intents, Contexts, Entities, Flows)
+    ├── Capabilities (Actions, Verifications, Validations)
+    ├── Channels
+    ├── Orchestration (Pipeline, States, Strategy)
+    └── Bots
+```
+
+---
+
+## 3. Mapeamentos Propostos — Estruturas Faltantes
+
+As estruturas abaixo **não existem como módulos dedicados** na arquitetura atual, mas são **deriváveis de componentes existentes**. Cada proposta segue o princípio: não inventar, apenas nomear o que já existe ou formalizar o que está implícito.
+
+---
+
+### 3.1 Tribunal Constitucional
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Tribunal que julga se uma ação viola a Constituição |
+| **Componente correspondente** | `Rule Engine` — camada de validação de regras pétreas |
+| **Responsabilidade** | Antes de qualquer ação crítica (venda, pagamento, exceção), verificar se a operação viola alguma regra pétrea da plataforma |
+| **Justificativa** | O Rule Engine já opera em 3 níveis (módulo → domínio → plataforma). A camada de plataforma funciona como tribunal constitucional. Não é um módulo novo — é a formalização do nível mais alto do Rule Engine existente. |
+
+**Implementação derivada:**
+```
+Rule Engine
+├── Nível Módulo     → Leis locais (bairro/cidade)
+├── Nível Domínio    → Leis estaduais
+└── Nível Plataforma → Tribunal Constitucional (regras pétreas)
+```
+
+---
+
+### 3.2 Rodovias Federais
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Estradas que conectam estados, permitindo transporte de mercadorias e pessoas |
+| **Componente correspondente** | `Event Bus` + `Workers` (Celery/RabbitMQ) |
+| **Responsabilidade** | Infraestrutura de transporte de dados entre domínios. Eventos são os veículos; as filas são as rodovias; Workers são os caminhoneiros. |
+| **Justificativa** | O sistema já possui `app/modules/events`, `app/core/celery_app.py` e workers distribuídos. Rodovias são a infraestrutura física sobre a qual Metrô (eventos) e Ônibus (workflows) trafegam. Não é módulo novo — é a nomeação da camada de transporte já existente. |
+
+---
+
+### 3.3 Cartório / Registro Civil
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Órgão que registra nascimentos, óbitos e transferências de propriedade |
+| **Componente correspondente** | `Auditoria de Estoque` + `Event Store` (logs de criação/exclusão de entidades) |
+| **Responsabilidade** | Registrar ciclo de vida de entidades: criação de pedidos, encerramento de leads, movimentações de estoque, alterações de status |
+| **Justificativa** | O módulo de estoque já possui auditoria de movimentações (`app/modules/estoque`). O Event Store já registra eventos. O Cartório é a formalização desse padrão como responsabilidade explícita do Jornal Oficial para entidades de qualquer domínio. |
+
+---
+
+### 3.4 Registro Nacional de Exceções
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Arquivo nacional onde ficam registrados todos os casos em que o Diplomata sobrescreveu uma decisão local |
+| **Componente correspondente** | Subcamada do `Auditoria / Event Store` dedicada a decisões do Controller |
+| **Responsabilidade** | Armazenar, com contexto completo, cada caso em que o Controller autorizou uma ação que um domínio recusou. Campos: domínio, recusa, motivo da autorização, regra de exceção aplicada |
+| **Justificativa** | Já descrito no documento de referência como padrão para conflitos diplomáticos. Formaliza o registro para auditoria, aprendizado e refinamento de regras. |
+
+**Exemplo de registro:**
+```json
+{
+  "dominio": "financeiro",
+  "recusa": "margem_insuficiente",
+  "controller_decisao": "autorizado",
+  "motivo": "cliente_vip",
+  "regra_excecao": "EXC-004",
+  "timestamp": "2026-05-16T14:00:00Z"
+}
+```
+
+---
+
+### 3.5 Censo Nacional
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Levantamento periódico de dados populacionais e econômicos do país |
+| **Componente correspondente** | `Relatórios` (`app/modules/relatorios`) |
+| **Responsabilidade** | Consolidar métricas de todos os domínios: vendas por período, leads convertidos, estoque em alerta, desempenho de campanhas, taxa de resolução do atendimento |
+| **Justificativa** | O módulo `relatorios` já existe. O Censo formaliza seu papel como visão agregada cross-domínio da saúde da plataforma. |
+
+---
+
+### 3.6 Correio Nacional
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Sistema postal que entrega mensagens e pacotes a destinatários específicos |
+| **Componente correspondente** | `Notificações` + `Comunicação` (`app/modules/comunicacao`) |
+| **Responsabilidade** | Entregar mensagens direcionadas a destinatários específicos (diferente do Metrô, que é broadcast). Inclui: notificações push, emails transacionais, alertas para atendentes |
+| **Justificativa** | Diferente do Metrô (eventos para quem quiser escutar), o Correio é ponto-a-ponto. Os módulos `comunicacao` e `notifications` já existem na arquitetura. |
+
+---
+
+### 3.7 Alfândega
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Posto de controle nas fronteiras que inspeciona o que entra e sai do país |
+| **Componente correspondente** | `Middleware` de validação nas Integrações (`app/core/middleware` + `app/integrations`) |
+| **Responsabilidade** | Validar, sanitizar e autorizar dados que entram via integrações externas (webhooks, APIs de terceiros) e dados que saem (chamadas a APIs externas) |
+| **Justificativa** | O `app/core/middleware` já existe. A Alfândega formaliza o padrão de que toda comunicação com "outros países" (sistemas externos) passa por validação. Não é módulo novo — é a nomeação do middleware de integração. |
+
+---
+
+### 3.8 Eleições / Governança Adaptativa
+
+| Campo | Valor |
+|-------|-------|
+| **Conceito da analogia** | Processo democrático onde a população escolhe representantes e define prioridades |
+| **Componente correspondente** | `Cognitive Engine` (Orchestration) + dados do `Censo` (Relatórios) |
+| **Responsabilidade** | Mecanismo pelo qual a plataforma adapta prioridades e comportamentos com base em dados reais. Exemplo: se o Censo mostra que 80% dos leads vêm do WhatsApp, a plataforma prioriza recursos nesse canal. |
+| **Justificativa** | A Cognitive Engine já possui orquestração e capacidade de análise. Combinada com os relatórios, permite decisões adaptativas. Não é módulo novo — é a formalização de um padrão de feedback loop entre Censo e Inteligência Nacional. |
+
+---
+
+## 4. Tabela Consolidada — Todos os Componentes
+
+| Analogia | Componente | Tipo | Status |
+|----------|-----------|------|--------|
+| País | Plataforma | Raiz | ✅ Existente |
+| Constituição | Regras Pétreas | Governança | ✅ Existente |
+| Dono do País | Platform Owner | Governança | ✅ Existente |
+| Estados | Domínios (ERP, CRM, Chatbot Studio) | Domínio | ✅ Existente |
+| Cidades | Módulos | Estrutural | ✅ Existente |
+| Bairros | Funcionalidades | Estrutural | ✅ Existente |
+| Leis Locais | Rules (Rule Engine) | Core | ✅ Existente |
+| Ônibus | Workflows Intradomínio | Core | ✅ Existente |
+| Metrô | Eventos Interdomínio | Core | ✅ Existente |
+| Diplomata | Controller | Core | ✅ Existente |
+| Serviços Públicos | Infraestrutura | Infra | ✅ Existente |
+| Agentes Públicos | Personas Conversáveis | Core | ✅ Existente |
+| Habitantes | Usuários / Bots / Workers | Operacional | ✅ Existente |
+| Polícia | Action Engine | Core | ✅ Existente |
+| Inteligência Nacional | Cognitive Engine | Core | ✅ Existente |
+| Embaixadas | Integrações Externas (ACL) | Infra | ✅ Existente + ACL |
+| Jornal Oficial | Auditoria / Event Store | Governança | ✅ Existente |
+| Tribunal Constitucional | Rule Engine (nível plataforma) | Governança | 🔵 Derivado |
+| Rodovias Federais | Event Bus + Workers (Celery) | Infra | 🔵 Derivado |
+| Cartório | Auditoria de ciclo de vida | Governança | 🔵 Derivado |
+| Registro de Exceções | Event Store (subcamada Controller) | Governança | 🔵 Derivado |
+| Censo Nacional | Relatórios (cross-domínio) | Operacional | 🔵 Derivado |
+| Correio Nacional | Notificações + Comunicação | Infra | 🔵 Derivado |
+| Alfândega | Middleware de Integrações | Infra | 🔵 Derivado |
+| Eleições | Orchestration + Relatórios (feedback) | Governança | 🔵 Derivado |
+
+> **✅ Existente** = já implementado ou planejado na arquitetura atual.
+> **🔵 Derivado** = nomeação formal de padrão já presente ou implícito. Nenhum módulo novo foi inventado.
+
+---
+
+## 5. Diagrama de Fluxo — Como o País Funciona
+
+```
+                        ┌─────────────────────┐
+                        │   CONSTITUIÇÃO       │
+                        │   (Regras Pétreas)   │
+                        └────────┬────────────┘
+                                 │ valida
+                                 ▼
+┌──────────┐  evento   ┌─────────────────┐  conflito  ┌──────────────┐
+│ ESTADO A │ ────────► │     METRÔ       │ ─────────► │  DIPLOMATA   │
+│ (ERP)    │           │ (Event Bus)     │            │ (Controller) │
+└──────────┘           └─────────────────┘            └──────┬───────┘
+                                                             │
+                                                    decisão  │
+                                                             ▼
+                                                   ┌─────────────────┐
+                                                   │ REGISTRO NAC.   │
+                                                   │ DE EXCEÇÕES     │
+                                                   └─────────────────┘
+
+┌──────────┐  workflow  ┌─────────────────┐  ação     ┌──────────────┐
+│ MÓDULO   │ ─────────► │    ÔNIBUS       │ ────────► │   POLÍCIA    │
+│ (Vendas) │            │ (Rule Engine)   │           │(Action Engine│
+└──────────┘            └─────────────────┘           └──────┬───────┘
+                                                             │
+                                                    executa  │
+                                                             ▼
+                                                   ┌─────────────────┐
+                                                   │  EMBAIXADA      │
+                                                   │ (Integração)    │
+                                                   └────────┬────────┘
+                                                            │
+                                                   ┌────────▼────────┐
+                                                   │   ALFÂNDEGA     │
+                                                   │  (Middleware)   │
+                                                   └─────────────────┘
+
+                        ┌─────────────────┐
+                        │  JORNAL OFICIAL  │  ◄──── registra tudo
+                        │  (Auditoria)     │
+                        └─────────────────┘
+```
+
+---
+
+## 6. Regras de Interação entre Componentes
+
+### 6.1 Comunicação entre Estados (Domínios)
+
+```
+REGRA: Estados NUNCA se comunicam diretamente.
+MECANISMO: Metrô (Eventos Interdomínio)
+FORMATO: Fatos, não ordens.
+
+✅ Correto:  PedidoPago          (fato)
+❌ Errado:   EstoqueExecuteReserva (ordem)
+```
+
+### 6.2 Comunicação dentro de um Estado (Intradomínio)
+
+```
+REGRA: Módulos do mesmo domínio usam Ônibus (Workflows).
+MECANISMO: Rule Engine em execução sequencial.
+FORMATO: Pipeline de validações e ações.
+
+Pedido → valida_estoque → valida_financeiro → aprova
+```
+
+### 6.3 Conflitos entre Estados
+
+```
+REGRA: Conflitos são resolvidos pelo Diplomata (Controller).
+FLUXO:
+  1. Estado A recusa
+  2. Estado B aprova
+  3. Diplomata consulta políticas
+  4. Se existe política → segue política
+  5. Se não existe → escalona para Platform Owner
+  6. Decisão registrada no Registro Nacional de Exceções
+```
+
+### 6.4 Acesso a Serviços Públicos
+
+```
+REGRA: Todo estado usa infraestrutura compartilhada.
+PROIBIÇÃO: Nenhum estado reconstrói serviço público.
+
+Exemplos:
+  - Auth → todo módulo usa o mesmo JWT/RBAC
+  - Cache → todo módulo usa o mesmo Redis
+  - DB → todo módulo usa o mesmo PostgreSQL
+```
+
+---
+
+## 7. Taxonomia dos Habitantes
+
+| Tipo | Analogia | Papel | Exemplo |
+|------|----------|-------|---------|
+| Usuário Humano | Cidadão | Opera o sistema via interface | Atendente, Gestor |
+| Bot / Agente | Agente Público | Representa um domínio com autonomia limitada | Agente Financeiro, Agente CRM |
+| Worker | Operário | Executa tarefas assíncronas sem interface | Celery task de envio de email |
+| Controller | Diplomata | Media conflitos | Bot Controller (Orchestration) |
+| Platform Owner | Dono do País | Define princípios | Administrador raiz |
+
+### 7.1 Regras dos Agentes (Personas Conversáveis)
+
+```
+1. Agentes NÃO governam — representam.
+2. Agentes usam: regras + contexto + permissões + memória.
+3. Agentes NÃO inventam política.
+4. Agentes são porta-vozes do estado (domínio).
+5. Em debate, o Controller (Diplomata) resolve conflitos entre agentes.
+```
+
+---
+
+## 8. Hierarquia de Regras
+
+```
+┌─────────────────────────────────────────┐
+│         CONSTITUIÇÃO (Pétreas)          │  ← Jamais violadas
+│  "nunca vender sem autorização"         │
+│  "nunca ignorar autenticação"           │
+├─────────────────────────────────────────┤
+│       LEIS FEDERAIS (Plataforma)        │  ← Rule Engine nível plataforma
+│  Políticas de segurança, RBAC           │
+├─────────────────────────────────────────┤
+│       LEIS ESTADUAIS (Domínio)          │  ← Rule Engine nível domínio
+│  "CRM: lead sem email não avança"       │
+├─────────────────────────────────────────┤
+│       LEIS MUNICIPAIS (Módulo)          │  ← Rule Engine nível módulo
+│  "Estoque <= 0 → bloquear venda"        │
+└─────────────────────────────────────────┘
+
+Precedência: Constituição > Federal > Estadual > Municipal
+Conflito: nível superior sempre vence.
+```
+
+---
+
+## 9. Princípios Constitucionais da Plataforma
+
+> Regras gerais e invioláveis da arquitetura. Todo componente, módulo, domínio e agente deve respeitar estes princípios.
+
+```
+ARTIGO 1 — Autonomia dos Domínios
+    Cada domínio (estado) governa seus próprios recursos.
+    Nenhum domínio governa outro.
+
+ARTIGO 2 — Comunicação por Fatos
+    Domínios se comunicam exclusivamente por eventos (fatos).
+    Eventos informam o que aconteceu — nunca ordenam o que fazer.
+
+ARTIGO 3 — Precedência de Regras Locais
+    Dentro de um domínio, regras locais têm prioridade.
+    Regras de nível superior só intervêm quando há conflito ou violação.
+
+ARTIGO 4 — Resolução Diplomática de Conflitos
+    Conflitos entre domínios são resolvidos pelo Controller (Diplomata).
+    O Controller consulta políticas — não inventa regras.
+
+ARTIGO 5 — Auditoria Total
+    Toda exceção, toda decisão do Controller, toda ação crítica
+    é registrada no Jornal Oficial com contexto completo.
+
+ARTIGO 6 — Representação, não Governo
+    Agentes (personas) representam seus domínios.
+    Não inventam política. Atuam dentro de regras e permissões.
+
+ARTIGO 7 — Inteligência sob Controle
+    A Cognitive Engine entende, interpreta e contextualiza.
+    Sem regras, a inteligência vira caos.
+    Toda saída cognitiva passa por validação do Rule Engine.
+
+ARTIGO 8 — Infraestrutura Compartilhada
+    Serviços públicos são compartilhados.
+    Nenhum domínio reconstrói o que a plataforma já oferece.
+
+ARTIGO 9 — Fronteiras Controladas
+    Toda comunicação com sistemas externos passa pela Alfândega (Middleware).
+    Dados são validados, sanitizados e autorizados antes de entrar ou sair.
+
+ARTIGO 10 — Soberania do Dono
+    O Platform Owner define princípios, visão e limites.
+    Não opera. Não resolve estoque. Não responde atendimento.
+    Define como o país funciona.
+```
+
+---
+
+## Referências
+
+- [architeture_reorganization.md](./architeture_reorganization.md) — Documento original de reorganização e analogia
+- `app/modules/` — 21 módulos existentes
+- `app/core/` — Engines (Cognitive, Logic), Middleware, Celery, Config
+- `app/integrations/` — ACL de Integrações (Interfaces, Registry, Resolvers, Adapters, Discovery)
+  - `communications/` — WhatsApp (WPPConnect, Meta) + Email (SMTP)
+  - `payments/` — Banco Inter (PIX)
+  - `logistics/` — Correios (CWS)
+  - Fluxo: `Domínio → Resolver → Registry → Adapter → API Externa`
